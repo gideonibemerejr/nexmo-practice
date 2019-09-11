@@ -6,6 +6,9 @@ const ejs = require('ejs')
 const nexmo = require('nexmo')
 const socket = require('socket.io')
 
+require('dotenv').config()
+
+
 // Initialize application
 const app = express()
 
@@ -23,6 +26,11 @@ app.use(bodyParser.urlencoded({ extended: true }))
 // Index Route
 app.get('/', (req, res) => {
   res.render('index')
+})
+
+app.post('/', (req, res) => {
+  res.send(req.body)
+  console.log(req.body)
 })
 
 const port = 8000
