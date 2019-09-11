@@ -3,12 +3,18 @@ const path = require('path')
 const logger = require('morgan')
 const bodyParser = require('body-parser')
 const ejs = require('ejs')
-const nexmo = require('nexmo')
+const Nexmo = require('nexmo')
 const socket = require('socket.io')
 
 require('dotenv').config()
 
-
+const nexmo = new Nexmo(
+  {
+    apiKey: process.env.API_KEY,
+    apiSecret: process.env.API_SECRET
+  },
+  { debug: true }
+)
 // Initialize application
 const app = express()
 
@@ -29,8 +35,26 @@ app.get('/', (req, res) => {
 })
 
 app.post('/', (req, res) => {
-  res.send(req.body)
-  console.log(req.body)
+  // res.send(req.body)
+  // console.log(req.body)
+  const from = '15055224541'
+  const to = req.body.number
+  const text = req.body.text
+
+  nexmo.message.sendSms(from, to, text, (err, responseData) => {
+    if (err) {
+      console.log(err)
+    } else {
+      console.dir(responseData)
+      // Get data from response
+      const data = {
+        id: responseData.messages[0]['message-id'],
+        number: responseData.messages[0]['to']
+      }
+      // Emit to the client
+      io.emit('smsStatus', data)
+    }
+  })
 })
 
 const port = 8000
@@ -39,4 +63,13 @@ const port = 8000
 
 const server = app.listen(port, () => {
   console.log(`Server started on port ${port}`)
+})
+
+// connect to socket.io
+const io = socket(server)
+io.on('connection', socket => {
+  console.log('Connected to the socket')
+  io.on('disconnect', () => {
+    console.log('disconnected')
+  })
 })
